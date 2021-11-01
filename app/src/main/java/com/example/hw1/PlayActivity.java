@@ -1,5 +1,7 @@
 package com.example.hw1;
 
+import android.media.MediaPlayer;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -27,10 +29,10 @@ public class PlayActivity extends AppCompatActivity {
     private int accidentCount;
     private Random rnd ;
     private final int HEARTS_NUM = 3;
-    private final int COLS = 3;
-    private final int RATE = 3;
-    private final int ROWS = 6;
-    private final int SPEED = 1000;
+    private final int COLS = 3; // number of cols
+    private final int RATE = 3; // rate to add rocks in screen
+    private final int ROWS = 6; // rows number
+    private final int SPEED = 1000; // speed of rocks move
     boolean toCreate; //true = creating new rock
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,20 +58,26 @@ public class PlayActivity extends AppCompatActivity {
 
 
     private void TimerMethod() {
-        //This method is called directly by the timer
-        //and runs in the same thread as the timer.
-
-        //We call the method that will work with the UI
-        //through the runOnUiThread method.
-        this.runOnUiThread(Timer_Tick);
+        this.runOnUiThread(new Runnable() {
+            public void run() {
+                //This method runs in the same thread as the UI.
+                updateRocks();
+                if(count % RATE == 0 ) {
+                    showRock(0, getRandomRockPos());
+                }
+                checkCrash();
+                count++;
+            }
+        });
     }
 
     private void updateRocks() {
-
+        //update rocks location
         for(int i = count%RATE; i < rocks.getChildCount(); i+=RATE){
             TableRow row = (TableRow) rocks.getChildAt(i);
             for(int j = 0 ; j < row.getChildCount(); j++){
                 ImageView img = (ImageView) row.getChildAt(j);
+                //image visible then invisible and visible the image below it
                 if(img.getVisibility() == View.VISIBLE){
                     img.setVisibility(View.INVISIBLE);
                     if(i + 1 < rocks.getChildCount())
@@ -79,48 +87,60 @@ public class PlayActivity extends AppCompatActivity {
         }
     }
 
-    private void checkAccident() {
+    private void checkCrash() {
+        //check if car crashed
         TableRow row = (TableRow) rocks.getChildAt(ROWS-1);
 
         for(int i = 0; i < row.getChildCount(); i++){
             ImageView img = (ImageView) row.getChildAt(i);
+            //car is crashed
             if(img.getVisibility() == View.VISIBLE && carPositionNum == i+1){
                 accidentCount += 1;
-                if(accidentCount < HEARTS_NUM)
+                // if still have hears decrement by one
+                if(accidentCount < HEARTS_NUM) {
+                    playSound(R.raw.crash);// play crash sound
                     hearts[HEARTS_NUM - accidentCount].setVisibility(View.INVISIBLE);
+                }
                 else{
+                    // no hears left then game over
                     Toast.makeText(getApplicationContext(),"Game Over", Toast.LENGTH_SHORT).show();
-                    finish();
+                    myTimer.cancel();
+                    playSound(R.raw.game_over);//play game over sound
+                    goBack();//finish the game
                 }
             }
         }
 
+    }
 
+    public void playSound(int soundId){
+        //play sound effect
+        MediaPlayer mPlayer = MediaPlayer.create(PlayActivity.this, soundId);
+        mPlayer.start();
+    }
+
+    private void goBack() {
+        // finish the activity screen when the game is over
+        Handler h = new Handler();
+        h.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                finish();
+            }
+        }, 2000);
     }
 
 
     private void showRock(int i, int j) {
+        // visible rock image in i,j index
         TableRow row = (TableRow) rocks.getChildAt(i);
         ImageView img  = (ImageView) row.getChildAt(j);
         img.setVisibility(View.VISIBLE);
     }
 
-    private Runnable Timer_Tick = new Runnable() {
-        public void run() {
-
-            //This method runs in the same thread as the UI.
-
-            //Do something to the UI thread here
-            updateRocks();
-            if(count % RATE == 0 ) {
-                showRock(0, getRandomRockPos());
-            }
-            checkAccident();
-            count++;
-        }
-    };
 
     public int getRandomRockPos(){
+        //get random number of cols
         return rnd.nextInt(COLS);
     }
 
