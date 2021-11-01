@@ -3,10 +3,12 @@ package com.example.hw1;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageButton;
+
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.Toast;
 
 import java.util.Random;
 import java.util.Timer;
@@ -14,25 +16,30 @@ import java.util.TimerTask;
 
 public class PlayActivity extends AppCompatActivity {
 
-    private RelativeLayout paths;
+
     private ImageView rightButton,leftButton, car;
+    private ImageView[] hearts;
     private RelativeLayout.LayoutParams carPosition;
     private int carPositionNum;
-
+    private TableLayout rocks;
     private Timer myTimer;
-    private ImageView rocks[];
-
+    private int count;
+    private int accidentCount;
+    private Random rnd ;
+    private final int HEARTS_NUM = 3;
+    private final int COLS = 3;
+    private final int RATE = 3;
+    private final int ROWS = 6;
+    private final int SPEED = 1000;
     boolean toCreate; //true = creating new rock
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
-
-
         InitializeVariables();
         FindViews();
         onClickListeners();
-        //GenerateRocks();
+        GenerateRocks();
 
     }
 
@@ -44,7 +51,7 @@ public class PlayActivity extends AppCompatActivity {
                 TimerMethod();
             }
 
-        }, 0, 1000);
+        }, 0, SPEED);
     }
 
 
@@ -57,21 +64,74 @@ public class PlayActivity extends AppCompatActivity {
         this.runOnUiThread(Timer_Tick);
     }
 
+    private void updateRocks() {
+
+        for(int i = count%RATE; i < rocks.getChildCount(); i+=RATE){
+            TableRow row = (TableRow) rocks.getChildAt(i);
+            for(int j = 0 ; j < row.getChildCount(); j++){
+                ImageView img = (ImageView) row.getChildAt(j);
+                if(img.getVisibility() == View.VISIBLE){
+                    img.setVisibility(View.INVISIBLE);
+                    if(i + 1 < rocks.getChildCount())
+                        showRock(i+1, j);
+                }
+            }
+        }
+    }
+
+    private void checkAccident() {
+        TableRow row = (TableRow) rocks.getChildAt(ROWS-1);
+
+        for(int i = 0; i < row.getChildCount(); i++){
+            ImageView img = (ImageView) row.getChildAt(i);
+            if(img.getVisibility() == View.VISIBLE && carPositionNum == i+1){
+                accidentCount += 1;
+                if(accidentCount < HEARTS_NUM)
+                    hearts[HEARTS_NUM - accidentCount].setVisibility(View.INVISIBLE);
+                else{
+                    Toast.makeText(getApplicationContext(),"Game Over", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+            }
+        }
+
+
+    }
+
+
+    private void showRock(int i, int j) {
+        TableRow row = (TableRow) rocks.getChildAt(i);
+        ImageView img  = (ImageView) row.getChildAt(j);
+        img.setVisibility(View.VISIBLE);
+    }
+
     private Runnable Timer_Tick = new Runnable() {
         public void run() {
 
             //This method runs in the same thread as the UI.
 
             //Do something to the UI thread here
-
+            updateRocks();
+            if(count % RATE == 0 ) {
+                showRock(0, getRandomRockPos());
+            }
+            checkAccident();
+            count++;
         }
     };
 
+    public int getRandomRockPos(){
+        return rnd.nextInt(COLS);
+    }
 
     private void InitializeVariables() {
         carPositionNum = 2; // 1 - leftSide, 2 - center, 3 - rightSide
         toCreate = true;
-        rocks = new ImageView[4];
+        count = 0;
+        rnd = new Random();
+        hearts = new ImageView[HEARTS_NUM];
+        accidentCount = 0;
+
     }
 
     private void onClickListeners() {
@@ -133,14 +193,13 @@ public class PlayActivity extends AppCompatActivity {
     }
 
     private void FindViews() {
-        paths = findViewById(R.id.paths);
         rightButton = (ImageView)findViewById(R.id.Button_right);// Initialize right button
         leftButton = (ImageView)findViewById(R.id.Button_left);// Initialize left button
         car = (ImageView)findViewById(R.id.car);//Initialize car
-        rocks[0].setImageResource(R.drawable.ic_rock);
-        rocks[1].setImageResource(R.drawable.ic_rock);
-        rocks[2].setImageResource(R.drawable.ic_rock);
-        rocks[3].setImageResource(R.drawable.ic_rock);
+        rocks = findViewById(R.id.Table_rocks);
+        hearts[0] = findViewById(R.id.heart1);
+        hearts[1] = findViewById(R.id.heart2);
+        hearts[2] = findViewById(R.id.heart3);
 
     }
 }
