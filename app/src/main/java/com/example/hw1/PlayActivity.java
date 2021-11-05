@@ -31,7 +31,7 @@ public class PlayActivity extends AppCompatActivity {
     private final int HEARTS_NUM = 3;
     private final int COLS = 3; // number of cols
     private final int RATE = 3; // rate to add rocks in screen
-    private final int ROWS = 6; // rows number
+    private final int ROWS = 8; // rows number
     private final int SPEED = 1000; // speed of rocks move
     boolean toCreate; //true = creating new rock
     @Override
@@ -61,10 +61,16 @@ public class PlayActivity extends AppCompatActivity {
         this.runOnUiThread(new Runnable() {
             public void run() {
                 //This method runs in the same thread as the UI.
-                updateRocks();
+
                 if(count % RATE == 0 ) {
+
                     showRock(0, getRandomRockPos());
+
+
+
                 }
+
+                updateRocks();
                 checkCrash();
                 count++;
             }
@@ -89,7 +95,7 @@ public class PlayActivity extends AppCompatActivity {
 
     private void checkCrash() {
         //check if car crashed
-        TableRow row = (TableRow) rocks.getChildAt(ROWS-1);
+        TableRow row = (TableRow) rocks.getChildAt(ROWS-2);
 
         for(int i = 0; i < row.getChildCount(); i++){
             ImageView img = (ImageView) row.getChildAt(i);
