@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -19,21 +20,22 @@ import java.util.TimerTask;
 public class PlayActivity extends AppCompatActivity {
 
 
-    private ImageView rightButton,leftButton, car;
+    private ImageView rightButton,leftButton;
+    private LinearLayout carBox;
     private ImageView[] hearts;
-    private RelativeLayout.LayoutParams carPosition;
     private int carPositionNum;
     private TableLayout rocks;
     private Timer myTimer;
-    private int count;
-    private int accidentCount;
+    private int index; // index
+    private int accidentCount; // number of crashs
+    private int SPEED = 1000; // speed of rocks move
     private Random rnd ;
     private final int HEARTS_NUM = 3;
     private final int COLS = 3; // number of cols
     private final int RATE = 3; // rate to add rocks in screen
-    private final int ROWS = 8; // rows number
-    private final int SPEED = 1000; // speed of rocks move
-    boolean toCreate; //true = creating new rock
+    private final int ROWS = 7; // rows number
+    private final int MAX_LINES_NUM = 3; // max lines number
+    private final int MIN_LINES_NUM = 1; // min lines number
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,7 +64,7 @@ public class PlayActivity extends AppCompatActivity {
             public void run() {
                 //This method runs in the same thread as the UI.
 
-                if(count % RATE == 0 ) {
+                if(index % RATE == 0 ) {
 
                     showRock(0, getRandomRockPos());
 
@@ -72,14 +74,14 @@ public class PlayActivity extends AppCompatActivity {
 
                 updateRocks();
                 checkCrash();
-                count++;
+                index++;
             }
         });
     }
 
     private void updateRocks() {
         //update rocks location
-        for(int i = count%RATE; i < rocks.getChildCount(); i+=RATE){
+        for(int i = index%RATE; i < rocks.getChildCount(); i+=RATE){
             TableRow row = (TableRow) rocks.getChildAt(i);
             for(int j = 0 ; j < row.getChildCount(); j++){
                 ImageView img = (ImageView) row.getChildAt(j);
@@ -109,10 +111,10 @@ public class PlayActivity extends AppCompatActivity {
                 }
                 else{
                     // no hears left then game over
+                    hearts[0].setVisibility(View.INVISIBLE);
                     Toast.makeText(getApplicationContext(),"Game Over", Toast.LENGTH_SHORT).show();
                     myTimer.cancel();
                     playSound(R.raw.game_over);//play game over sound
-                    goBack();//finish the game
                 }
             }
         }
@@ -123,17 +125,6 @@ public class PlayActivity extends AppCompatActivity {
         //play sound effect
         MediaPlayer mPlayer = MediaPlayer.create(PlayActivity.this, soundId);
         mPlayer.start();
-    }
-
-    private void goBack() {
-        // finish the activity screen when the game is over
-        Handler h = new Handler();
-        h.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                finish();
-            }
-        }, 2000);
     }
 
 
@@ -151,9 +142,8 @@ public class PlayActivity extends AppCompatActivity {
     }
 
     private void InitializeVariables() {
-        carPositionNum = 2; // 1 - leftSide, 2 - center, 3 - rightSide
-        toCreate = true;
-        count = 0;
+        carPositionNum = 2; // 1 - line 1, 2 - line 2, 3 - line 3
+        index = 0;
         rnd = new Random();
         hearts = new ImageView[HEARTS_NUM];
         accidentCount = 0;
@@ -165,7 +155,7 @@ public class PlayActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //
-                if(carPositionNum != 3) {
+                if(carPositionNum < MAX_LINES_NUM) {
                     JumpRight();
                 }
             }
@@ -174,7 +164,7 @@ public class PlayActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //
-                if(carPositionNum != 1) {
+                if(carPositionNum > MIN_LINES_NUM) {
                     JumpLeft();
                 }
             }
@@ -183,45 +173,28 @@ public class PlayActivity extends AppCompatActivity {
     }
 
     private void JumpLeft() {
-        if(carPositionNum == 2){
-            carPosition = new RelativeLayout.LayoutParams(210,250);
-            carPosition.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            carPosition.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-            carPosition.leftMargin = 100;
-            car.setLayoutParams(carPosition);
-            carPositionNum = 1;
+        carPositionNum--;
+        updateCarPosition();
+    }
 
-        }else if(carPositionNum == 3){
-            carPosition = new RelativeLayout.LayoutParams(210,250);
-            carPosition.addRule(RelativeLayout.CENTER_HORIZONTAL);
-            carPosition.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-            car.setLayoutParams(carPosition);
-            carPositionNum = 2;
+    private void updateCarPosition() {
+        for(int i = 0; i < carBox.getChildCount(); i++){
+            ImageView car = (ImageView) carBox.getChildAt(i);
+            car.setVisibility(View.INVISIBLE);
         }
+
+        ((ImageView) carBox.getChildAt(carPositionNum - 1)).setVisibility(View.VISIBLE);
     }
 
     private void JumpRight() {
-        if(carPositionNum == 2){
-            carPosition = new RelativeLayout.LayoutParams(210,250);
-            carPosition.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            carPosition.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-            carPosition.rightMargin = 100;
-            car.setLayoutParams(carPosition);
-            carPositionNum = 3;
-
-        }else if(carPositionNum == 1){
-            carPosition = new RelativeLayout.LayoutParams(210,250);
-            carPosition.addRule(RelativeLayout.CENTER_HORIZONTAL);
-            carPosition.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-            car.setLayoutParams(carPosition);
-            carPositionNum = 2;
-        }
+        carPositionNum++;
+        updateCarPosition();
     }
 
     private void FindViews() {
         rightButton = (ImageView)findViewById(R.id.Button_right);// Initialize right button
         leftButton = (ImageView)findViewById(R.id.Button_left);// Initialize left button
-        car = (ImageView)findViewById(R.id.car);//Initialize car
+        carBox = (LinearLayout)findViewById(R.id.car);//Initialize car
         rocks = findViewById(R.id.Table_rocks);
         hearts[0] = findViewById(R.id.heart1);
         hearts[1] = findViewById(R.id.heart2);

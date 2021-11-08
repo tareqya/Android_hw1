@@ -13,10 +13,6 @@
         android:supportsRtl="false"
         android:theme="@style/Theme.HW1">
         <activity android:name=".PlayActivity">
-
-
-        </activity>
-        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
